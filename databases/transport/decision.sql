@@ -10,7 +10,8 @@ FROM motorcycle m
          JOIN vehicle USING (model)
 WHERE horsepower > 150
   AND price < 20000
-  AND m.type = 'Sport';
+  AND m.type = 'Sport'
+ORDER BY horsepower DESC;
 
 /*
 Задача 2
