@@ -105,3 +105,33 @@ ORDER BY name;
 Если у сотрудника нет назначенных проектов или задач, отобразить NULL.
  */
 
+with RECURSIVE recursiveCTE AS
+                   (SELECT employeeid, name, managerid, departmentid, roleid
+                    FROM employees
+                    WHERE employeeid = 1
+
+                    UNION ALL
+
+                    SELECT e.employeeid, e.name, e.managerid, e.departmentid, e.roleid
+                    FROM employees e
+                             JOIN recursiveCTE r on e.managerid = r.employeeid)
+SELECT employeeid                             as EmployeeID,
+       name                                   as EmployeeName,
+       r.managerid                            as ManagerID,
+       departmentname                         as DepartmentName,
+       rolename                               as RoleName,
+       string_agg(DISTINCT projectname, ', ') as ProjectNames,
+       string_agg(DISTINCT taskname, ', ')    as TaskNames,
+       coalesce(totalSubordinates, 0)         as TotalSubordinates
+FROM recursiveCTE r
+         JOIN departments d USING (departmentid)
+         JOIN roles USING (roleid)
+         JOIN projects p USING (departmentid)
+         LEFT JOIN tasks t on t.assignedto = employeeid
+         LEFT JOIN (SELECT managerid, count(*) as totalSubordinates
+                    FROM employees
+                    GROUP BY managerid) as count_subordinates
+                   on employeeid = count_subordinates.managerid
+GROUP BY employeeid, name, r.managerid, departmentname, rolename, projectname, totalSubordinates
+HAVING rolename = 'Менеджер' AND totalSubordinates > 0
+ORDER BY name;
